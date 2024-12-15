@@ -4,6 +4,8 @@ import itertools
 
 sys.setrecursionlimit(10**6)
 
+# 1537931 -> wrong
+
 BOX = "O"
 BOX_L = "["
 BOX_R = "]"
@@ -27,20 +29,45 @@ def main(file):
     for line in field:
         print("".join(line))
     field = inflate(field)
+    print()
     for line in field:
         print("".join(line))
-    for m in moves:
+    for i, m in enumerate(moves):
+        # if i > 4455:
+        #     input()
         b = find_bot(field)
         d = DIRECTIONS[m]
         if d[0] == 0:
             move_h(field, b, d)
         else:
             move_v(field, b, d)
-        print()
-        print("Move", m, d)
-        for line in field:
-            print("".join(line))
+        # if i > 4455:
+        #     print()
+        #     print("Move", i, m, d)
+        #     for line in field:
+        #         print("".join(line))
+        if not check(field):
+            print()
+            print("Move", i, m, d)
+            for line in field:
+                print("".join(line))
+            break
+    print()
+    for line in field:
+        print("".join(line))
     print(score(field))
+
+
+def check(field):
+    old = None
+    for i, line in enumerate(field):
+        for j, c in enumerate(line):
+            if c == BOX_R and old != BOX_L:
+                print()
+                print(i, j, "".join([old, c]))
+                return False
+            old = c
+    return True
 
 
 def inflate(field):
@@ -93,31 +120,42 @@ def move_h(field, b, d):
 
 def move_v(field, b, d):
     d_i = d[0]
-    ok, boxes = move_v_rec(field, [b], d_i)
-    if not ok:
+    # print("b", b)
+    boxes = move_v_rec(field, [b], d_i)
+    # print()
+    # print("boxes to move", boxes)
+    if boxes is None:
         return field
     for b in boxes[::-1]:
         field[b[0]+d_i][b[1]] = field[b[0]][b[1]]
         field[b[0]][b[1]] = EMPTY
 
 
-def move_v_rec(field, boxes, d_i):
-    for p in boxes:
-        target = field[p[0]+d_i][p[1]]
-        if target == WALL:
-            return (False, None)
-        if target == EMPTY:
-            boxes.append(p)
-        if target in [BOX_L, BOX_R]:
-            x0 = (p[0],       p[1])
-            y0 = (p[0],       p[1] + BOX_J[target])
-            x1 = (p[0] + d_i, p[1])
-            y1 = (p[0] + d_i, p[1] + BOX_J[target])
-            ok, br = move_v_rec(field, [x1, y1], d_i)
-            if not ok:
-                return (False, None)
-            boxes += [x0, y0] + br
-    return (True, boxes)
+def move_v_rec(field, objs_0, d_i):
+    objs_n = []
+    for obj0 in objs_0:
+        obj1 = (obj0[0] + d_i, obj0[1])
+        c0 = field[obj0[0]][obj0[1]]
+        c1 = field[obj1[0]][obj1[1]]
+        if c1 == WALL:
+            return None
+        if c1 == EMPTY:
+            continue
+        if c1 in BOX_J:
+            obj1_x = obj1
+            obj1_y = (obj1[0], obj1[1] + BOX_J[c1])
+            if not obj1_x in objs_n:
+                objs_n.append(obj1_x)
+            if not obj1_y in objs_n:
+                objs_n.append(obj1_y)
+            continue
+        assert False
+    if objs_n:
+        nxt = move_v_rec(field, objs_n, d_i)
+        if nxt is None:
+            return None
+        return objs_0 + nxt
+    return objs_0
 
 
 def score(field):
