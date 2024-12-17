@@ -52,21 +52,24 @@ DEBUG = False
 
 def main(file):
     reg0, ins = read_data(file)
-    a = 1
-    while True:
-        reg = [a, reg0[B], reg0[C]]
-        if a % 5_000 == 0:
-            print(a, reg)
-        try:
-            output = run(reg, ins)
-        except:
-            output = None
-        if output == ins:
-            break
-        a += 1
+    a = find_a(ins, 0, 1)
     print()
     print(a)
-    print(output)
+    print(run([a, 0, 0], ins))
+
+
+def find_a(prog, a, n):
+    if n > len(prog):  # Base
+        return a
+    for i in range(8):
+        a2 = (a << 3) | i
+        out = run([a2, 0, 0], prog)
+        target = prog[-n:]
+        if out == target:
+            res = find_a(prog, a2, n+1)
+            if res:
+                return res
+    return None
 
 
 def run(reg, ins):
